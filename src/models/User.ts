@@ -5,8 +5,6 @@ export interface User {
   name: string;
   email: string;
   password_hash: string;
-  created_at?: Date;
-  updated_at?: Date;
 }
 
 export interface CreateUserData {
@@ -59,7 +57,7 @@ export class UserModel {
 
   static async findAll(): Promise<User[]> {
     const [rows] = await pool.execute(
-      'SELECT id, name, email, created_at, updated_at FROM users ORDER BY created_at DESC'
+      'SELECT id, name, email FROM users ORDER BY id DESC'
     );
     
     return rows as User[];

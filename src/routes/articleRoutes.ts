@@ -13,7 +13,7 @@ router.get('/author/:authorId', ArticleController.getByAuthor);
 router.get('/:id', ArticleController.getById);
 
 // Rotas protegidas (requerem autenticação)
-router.post('/', authenticateToken, upload.single('banner'), validateArticle, ArticleController.create);
+router.post('/', upload.single('banner'), validateArticle, ArticleController.create);
 router.put('/:id', authenticateToken, upload.single('banner'), validateUpdateArticle, ArticleController.update);
 router.delete('/:id', authenticateToken, ArticleController.delete);
 router.get('/my/articles', authenticateToken, ArticleController.getMyArticles);

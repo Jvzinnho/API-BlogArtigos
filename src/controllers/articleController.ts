@@ -39,30 +39,55 @@ const upload = multer({
 export { upload };
 
 export class ArticleController {
-  static async create(req: AuthRequest, res: Response) {
+  static async create(req: Request, res: Response) {
     try {
-      const userId = req.userId;
-      if (!userId) {
-        return res.status(401).json({ error: 'Usuário não autenticado' });
+      console.log('=== INICIANDO CRIAÇÃO DE ARTIGO ===');
+      console.log('Body recebido:', req.body);
+      
+      const { title, content, author_id } = req.body;
+      
+      if (!author_id) {
+        console.log('Erro: ID do autor não fornecido');
+        return res.status(400).json({ error: 'ID do autor é obrigatório' });
       }
 
-      const { title, content } = req.body;
-      const banner_url = req.file ? `/uploads/${req.file.filename}` : undefined;
+      console.log('Verificando usuário com ID:', author_id);
+      
+      // Verificar se o usuário existe
+      const { UserModel } = await import('../models/User');
+      const user = await UserModel.findById(parseInt(author_id));
+      
+      console.log('Usuário encontrado:', user);
+      
+      if (!user) {
+        console.log('Erro: Usuário não encontrado');
+        return res.status(400).json({ error: 'Usuário não encontrado' });
+      }
+
+      const banner_url = req.file ? `/uploads/${req.file.filename}` : null;
 
       const articleData: CreateArticleData = {
         title,
         content,
-        author_id: userId,
+        author_id: parseInt(author_id),
         banner_url
       };
 
+      console.log('Dados do artigo a serem criados:', articleData);
+
       const article = await ArticleModel.create(articleData);
+      
+      console.log('Artigo criado com sucesso:', article);
+      
       res.status(201).json({
         message: 'Artigo criado com sucesso',
         article
       });
     } catch (error) {
+      console.error('=== ERRO DETALHADO ===');
       console.error('Erro ao criar artigo:', error);
+      console.error('Stack trace:', error.stack);
+      console.error('=== FIM DO ERRO ===');
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   }

@@ -71,7 +71,8 @@ export const validateArticle = (req: Request, res: Response, next: NextFunction)
     });
   }
 
-  if (typeof author_id !== 'number' || author_id <= 0) {
+  const authorIdNum = parseInt(author_id);
+  if (isNaN(authorIdNum) || authorIdNum <= 0) {
     return res.status(400).json({ 
       error: 'author_id deve ser um número válido' 
     });
