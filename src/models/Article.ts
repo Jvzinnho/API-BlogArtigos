@@ -30,38 +30,18 @@ export interface UpdateArticleData {
 
 export class ArticleModel {
   static async create(articleData: CreateArticleData): Promise<Article> {
-    try {
-      console.log('=== ARTICLE MODEL CREATE ===');
-      console.log('Dados recebidos no modelo:', articleData);
-      
-      const { title, content, author_id, banner_url } = articleData;
-      
-      console.log('Executando INSERT...');
-      const [result] = await pool.execute(
-        'INSERT INTO articles (title, content, author_id, banner_url) VALUES (?, ?, ?, ?)',
-        [title, content, author_id, banner_url]
-      );
-      
-      console.log('Resultado do INSERT:', result);
-      
-      const insertResult = result as any;
-      console.log('Insert ID:', insertResult.insertId);
-      
-      console.log('Buscando artigo criado...');
-      const article = await this.findById(insertResult.insertId);
-      
-      console.log('Artigo encontrado:', article);
-      
-      if (!article) {
-        throw new Error('Falha ao criar artigo');
-      }
-      return article;
-    } catch (error) {
-      console.error('=== ERRO NO MODELO ARTICLE ===');
-      console.error('Erro detalhado:', error);
-      console.error('Stack trace:', error.stack);
-      throw error;
+    const { title, content, author_id, banner_url } = articleData;
+    const [result] = await pool.execute(
+      'INSERT INTO articles (title, content, author_id, banner_url) VALUES (?, ?, ?, ?)',
+      [title, content, author_id, banner_url || null]
+    );
+    
+    const insertResult = result as any;
+    const article = await this.findById(insertResult.insertId);
+    if (!article) {
+      throw new Error('Falha ao criar artigo');
     }
+    return article;
   }
 
   static async findById(id: number): Promise<Article | null> {

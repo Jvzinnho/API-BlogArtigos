@@ -41,30 +41,20 @@ export { upload };
 export class ArticleController {
   static async create(req: Request, res: Response) {
     try {
-      console.log('=== INICIANDO CRIAÇÃO DE ARTIGO ===');
-      console.log('Body recebido:', req.body);
-      
       const { title, content, author_id } = req.body;
       
       if (!author_id) {
-        console.log('Erro: ID do autor não fornecido');
         return res.status(400).json({ error: 'ID do autor é obrigatório' });
       }
 
-      console.log('Verificando usuário com ID:', author_id);
-      
       // Verificar se o usuário existe
       const { UserModel } = await import('../models/User');
       const user = await UserModel.findById(parseInt(author_id));
-      
-      console.log('Usuário encontrado:', user);
-      
       if (!user) {
-        console.log('Erro: Usuário não encontrado');
         return res.status(400).json({ error: 'Usuário não encontrado' });
       }
 
-      const banner_url = req.file ? `/uploads/${req.file.filename}` : null;
+      const banner_url = req.file ? `/uploads/${req.file.filename}` : undefined;
 
       const articleData: CreateArticleData = {
         title,
@@ -73,21 +63,14 @@ export class ArticleController {
         banner_url
       };
 
-      console.log('Dados do artigo a serem criados:', articleData);
-
       const article = await ArticleModel.create(articleData);
-      
-      console.log('Artigo criado com sucesso:', article);
       
       res.status(201).json({
         message: 'Artigo criado com sucesso',
         article
       });
     } catch (error) {
-      console.error('=== ERRO DETALHADO ===');
       console.error('Erro ao criar artigo:', error);
-      console.error('Stack trace:', error.stack);
-      console.error('=== FIM DO ERRO ===');
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   }
@@ -174,41 +157,55 @@ export class ArticleController {
     }
   }
 
-  static async update(req: AuthRequest, res: Response) {
+  static async update(req: Request, res: Response) {
     try {
-      const userId = req.userId;
-      if (!userId) {
-        return res.status(401).json({ error: 'Usuário não autenticado' });
+      const { id, title, content, author_id } = req.body;
+
+      // Validações básicas
+      if (!id) {
+        return res.status(400).json({ error: 'ID do artigo é obrigatório' });
       }
 
-      const { id } = req.params;
+      if (!author_id) {
+        return res.status(400).json({ error: 'ID do autor é obrigatório' });
+      }
+
       const articleId = parseInt(id);
-
       if (isNaN(articleId)) {
-        return res.status(400).json({ error: 'ID inválido' });
+        return res.status(400).json({ error: 'ID do artigo inválido' });
       }
 
-      // Verificar se o artigo existe e se o usuário é o autor
+      // Verificar se o artigo existe
       const existingArticle = await ArticleModel.findById(articleId);
       if (!existingArticle) {
         return res.status(404).json({ error: 'Artigo não encontrado' });
       }
 
-      if (existingArticle.author_id !== userId) {
+      // Verificar se o usuário é o autor
+      if (existingArticle.author_id !== parseInt(author_id)) {
         return res.status(403).json({ error: 'Você só pode editar seus próprios artigos' });
       }
 
-      const { title, content } = req.body;
+      // Preparar dados para atualização
       const updateData: any = {};
-
       if (title) updateData.title = title;
       if (content) updateData.content = content;
       if (req.file) {
         updateData.banner_url = `/uploads/${req.file.filename}`;
       }
 
+      // Verificar se há dados para atualizar
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: 'Nenhum campo para atualizar foi fornecido' });
+      }
+
+      // Atualizar o artigo
       const updatedArticle = await ArticleModel.update(articleId, updateData);
       
+      if (!updatedArticle) {
+        return res.status(500).json({ error: 'Erro ao atualizar artigo no banco de dados' });
+      }
+
       res.json({
         message: 'Artigo atualizado com sucesso',
         article: updatedArticle
@@ -219,18 +216,21 @@ export class ArticleController {
     }
   }
 
-  static async delete(req: AuthRequest, res: Response) {
+  static async delete(req: Request, res: Response) {
     try {
-      const userId = req.userId;
-      if (!userId) {
-        return res.status(401).json({ error: 'Usuário não autenticado' });
+      const { id, author_id } = req.body;
+
+      if (!id) {
+        return res.status(400).json({ error: 'ID do artigo é obrigatório' });
       }
 
-      const { id } = req.params;
       const articleId = parseInt(id);
-
       if (isNaN(articleId)) {
-        return res.status(400).json({ error: 'ID inválido' });
+        return res.status(400).json({ error: 'ID do artigo inválido' });
+      }
+
+      if (!author_id) {
+        return res.status(400).json({ error: 'ID do autor é obrigatório' });
       }
 
       // Verificar se o artigo existe e se o usuário é o autor
@@ -239,7 +239,7 @@ export class ArticleController {
         return res.status(404).json({ error: 'Artigo não encontrado' });
       }
 
-      if (existingArticle.author_id !== userId) {
+      if (existingArticle.author_id !== parseInt(author_id)) {
         return res.status(403).json({ error: 'Você só pode deletar seus próprios artigos' });
       }
 
