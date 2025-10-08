@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Configuração do pool
 export const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER,
@@ -17,7 +16,6 @@ export const pool = mysql.createPool({
   timezone: 'Z'
 });
 
-// Função para testar a conexão
 export async function testConnection() {
   try {
     const connection = await pool.getConnection();

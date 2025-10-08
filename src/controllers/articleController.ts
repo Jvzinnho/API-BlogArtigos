@@ -47,7 +47,6 @@ export class ArticleController {
         return res.status(400).json({ error: 'ID do autor é obrigatório' });
       }
 
-      // Verificar se o usuário existe
       const { UserModel } = await import('../models/User');
       const user = await UserModel.findById(parseInt(author_id));
       if (!user) {
@@ -87,7 +86,6 @@ export class ArticleController {
         articles = await ArticleModel.findAll();
       }
 
-      // Paginação simples
       const startIndex = (Number(page) - 1) * Number(limit);
       const endIndex = startIndex + Number(limit);
       const paginatedArticles = articles.slice(startIndex, endIndex);
@@ -161,7 +159,7 @@ export class ArticleController {
     try {
       const { id, title, content, author_id } = req.body;
 
-      // Validações básicas
+      
       if (!id) {
         return res.status(400).json({ error: 'ID do artigo é obrigatório' });
       }
@@ -175,18 +173,15 @@ export class ArticleController {
         return res.status(400).json({ error: 'ID do artigo inválido' });
       }
 
-      // Verificar se o artigo existe
       const existingArticle = await ArticleModel.findById(articleId);
       if (!existingArticle) {
         return res.status(404).json({ error: 'Artigo não encontrado' });
       }
 
-      // Verificar se o usuário é o autor
       if (existingArticle.author_id !== parseInt(author_id)) {
         return res.status(403).json({ error: 'Você só pode editar seus próprios artigos' });
       }
 
-      // Preparar dados para atualização
       const updateData: any = {};
       if (title) updateData.title = title;
       if (content) updateData.content = content;
@@ -194,12 +189,10 @@ export class ArticleController {
         updateData.banner_url = `/uploads/${req.file.filename}`;
       }
 
-      // Verificar se há dados para atualizar
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ error: 'Nenhum campo para atualizar foi fornecido' });
       }
 
-      // Atualizar o artigo
       const updatedArticle = await ArticleModel.update(articleId, updateData);
       
       if (!updatedArticle) {
@@ -233,7 +226,6 @@ export class ArticleController {
         return res.status(400).json({ error: 'ID do autor é obrigatório' });
       }
 
-      // Verificar se o artigo existe e se o usuário é o autor
       const existingArticle = await ArticleModel.findById(articleId);
       if (!existingArticle) {
         return res.status(404).json({ error: 'Artigo não encontrado' });

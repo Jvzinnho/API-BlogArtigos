@@ -10,7 +10,7 @@ interface AuthRequest extends Request {
 export class UserController {
   static async register(req: Request, res: Response) {
     try {
-      const { name, email, password } = req.body;
+      const { email, password } = req.body;
 
       // Verificar se o email já existe
       const existingUser = await UserModel.findByEmail(email);
@@ -22,9 +22,9 @@ export class UserController {
       const saltRounds = 10;
       const password_hash = await bcrypt.hash(password, saltRounds);
 
-      // Criar usuário
+      // Criar usuário (sem nome inicialmente)
       const userData: CreateUserData = {
-        name,
+        name: '', // Nome vazio inicialmente
         email,
         password: password_hash
       };
@@ -93,7 +93,6 @@ export class UserController {
         return res.status(404).json({ error: 'Usuário não encontrado' });
       }
 
-      // Retornar dados do usuário (sem a senha)
       const { password_hash: _, ...userWithoutPassword } = user;
       
       res.json(userWithoutPassword);
@@ -103,36 +102,48 @@ export class UserController {
     }
   }
 
-  static async updateProfile(req: AuthRequest, res: Response) {
+  static async updateProfile(req: Request, res: Response) {
     try {
-      const userId = req.userId;
-      if (!userId) {
-        return res.status(401).json({ error: 'Usuário não autenticado' });
+      const { id, name, email, password } = req.body;
+
+      if (!id) {
+        return res.status(400).json({ error: 'ID do usuário é obrigatório' });
       }
 
-      const { name, email, password } = req.body;
+      const userId = parseInt(id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: 'ID do usuário inválido' });
+      }
+
+      const existingUser = await UserModel.findById(userId);
+      if (!existingUser) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+
       const updateData: any = {};
 
-      if (name) updateData.name = name;
-      if (email) {
-        // Verificar se o email já existe em outro usuário
-        const existingUser = await UserModel.findByEmail(email);
-        if (existingUser && existingUser.id !== userId) {
+      if (name !== undefined) updateData.name = name;
+      if (email !== undefined) {
+        const userWithEmail = await UserModel.findByEmail(email);
+        if (userWithEmail && userWithEmail.id !== userId) {
           return res.status(400).json({ error: 'Email já cadastrado' });
         }
         updateData.email = email;
       }
-      if (password) {
+      if (password !== undefined) {
         const saltRounds = 10;
         updateData.password = await bcrypt.hash(password, saltRounds);
       }
 
-      const updatedUser = await UserModel.update(userId, updateData);
-      if (!updatedUser) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: 'Nenhum campo para atualizar foi fornecido' });
       }
 
-      // Retornar dados do usuário (sem a senha)
+      const updatedUser = await UserModel.update(userId, updateData);
+      if (!updatedUser) {
+        return res.status(500).json({ error: 'Erro ao atualizar usuário no banco de dados' });
+      }
+
       const { password_hash: _, ...userWithoutPassword } = updatedUser;
       
       res.json({
@@ -169,7 +180,6 @@ export class UserController {
         return res.status(404).json({ error: 'Usuário não encontrado' });
       }
 
-      // Retornar dados do usuário (sem a senha)
       const { password_hash: _, ...userWithoutPassword } = user;
       
       res.json(userWithoutPassword);

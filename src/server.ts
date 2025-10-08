@@ -5,7 +5,6 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
-    // Testar conexão com banco antes de iniciar servidor
     const dbConnected = await testConnection();
     
     if (dbConnected) {

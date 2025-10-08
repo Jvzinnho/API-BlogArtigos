@@ -1,17 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 
 export const validateUser = (req: Request, res: Response, next: NextFunction) => {
-  const { name, email, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!name || !email || !password) {
+  if (!email || !password) {
     return res.status(400).json({ 
-      error: 'Campos obrigatórios: name, email, password' 
-    });
-  }
-
-  if (name.length < 2) {
-    return res.status(400).json({ 
-      error: 'Nome deve ter pelo menos 2 caracteres' 
+      error: 'Campos obrigatórios: email, password' 
     });
   }
 
@@ -93,6 +87,35 @@ export const validateUpdateArticle = (req: Request, res: Response, next: NextFun
   if (content !== undefined && content.length < 50) {
     return res.status(400).json({ 
       error: 'Conteúdo deve ter pelo menos 50 caracteres' 
+    });
+  }
+
+  next();
+};
+
+export const validateProfileUpdate = (req: Request, res: Response, next: NextFunction) => {
+  const { name, email, password } = req.body;
+
+  if (name !== undefined) {
+    if (name.length < 2) {
+      return res.status(400).json({ 
+        error: 'Nome deve ter pelo menos 2 caracteres' 
+      });
+    }
+  }
+
+  if (email !== undefined) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        error: 'Email inválido' 
+      });
+    }
+  }
+
+  if (password !== undefined && password.length < 6) {
+    return res.status(400).json({ 
+      error: 'Senha deve ter pelo menos 6 caracteres' 
     });
   }
 
